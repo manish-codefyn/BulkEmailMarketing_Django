@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}{% if form.instance.pk %}Edit Plugin{% else %}Create Plugin -{{ site_name }} {% endif %}{% endblock %}
+{% load crispy_forms_tags %}
+{% block content %}
+<div class="container mt-4 shadow-sm p-4 rounded-4">
+    <h2 class="mb-4">
+        {% if form.instance.pk %}
+            Edit Plugin
+        {% else %}
+            Create Plugin
+        {% endif %}
+    </h2>
+
+    <form method="post">
+        {% csrf_token %}
+        {{ form|crispy }}
+
+        <button type="submit" class="btn btn-success">
+            {% if form.instance.pk %}Update{% else %}Create{% endif %}
+        </button>
+        <a href="{% url 'campaign:plugin_list' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+
+{% endblock %}

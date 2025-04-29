@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags static %}
+
+{% block title %}{% if form.instance.pk %}Edit{% else %}Add New{% endif %} Subscriber -{{site_name}}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-xl-6">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">
+                            <i class="bi bi-people-fill me-2"></i>
+                            {% if form.instance.pk %}Edit{% else %}Add New{% endif %} Subscriber
+                        </h4>
+                        <div>
+                            
+                            <!-- <button type="button" class="btn btn-sm btn-light me-2" data-bs-toggle="modal" data-bs-target="#importModal">
+                                <i class="bi bi-upload me-1"></i> Import
+                            </button> -->
+
+                            <a  type="button" class="btn btn-sm btn-light me-2" href="{% url 'subscriber:import_subscribers_lists' %}"> <i class="bi bi-upload me-1"></i> Import</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body p-4">
+                    <form method="post" id="subscriberForm" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            {{ form|crispy }}
+                        </div>
+                        
+                        <div class="d-flex justify-content-between align-items-center border-top pt-4">
+                            <div>
+                                <button type="submit" class="btn btn-primary px-4 py-2">
+                                    <i class="bi bi-save me-2"></i>Save Subscriber
+                                </button>
+                            </div>
+                            
+                            <div>
+                                <a href="{% url 'subscriber:subscriber_list' %}" class="btn btn-outline-secondary me-2">
+                                    <i class="bi bi-x-circle me-2"></i>Cancel
+                                </a>
+                                {% if form.instance.pk %}
+                                <a href="{% url 'subscriber:subscriber_delete' form.instance.pk %}" class="btn btn-danger">
+                                    <i class="bi bi-trash me-2"></i>Delete
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Import Modal -->
+<div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="importModalLabel">
+                    <i class="bi bi-upload me-2"></i>Import Subscribers
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="importForm" method="post" enctype="multipart/form-data" action="{% url 'subscriber:import_subscriber_lists' %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="csvFile" class="form-label">Select CSV File</label>
+                        <input class="form-control" type="file" id="csvFile" name="csv_file" accept=".csv" required>
+                        <div class="form-text">
+                            CSV should contain columns: email, first_name, last_name, etc.
+                        </div>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="hasHeaders" name="has_headers" checked>
+                        <label class="form-check-label" for="hasHeaders">File contains headers</label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-2"></i>Cancel
+                </button>
+                <button type="submit" form="importForm" class="btn btn-primary">
+                    <i class="bi bi-upload me-2"></i>Import
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Form validation
+    const form = document.getElementById('subscriberForm');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            if (!form.checkValidity()) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        }, false);
+    }
+
+    // Email validation example
+    const emailField = document.getElementById('id_email');
+    if (emailField) {
+        emailField.addEventListener('blur', function() {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (this.value && !emailRegex.test(this.value)) {
+                this.setCustomValidity('Please enter a valid email address');
+                this.classList.add('is-invalid');
+            } else {
+                this.setCustomValidity('');
+                this.classList.remove('is-invalid');
+            }
+        });
+    }
+
+    // Show loading state on form submission
+    const forms = document.querySelectorAll('form');
+    forms.forEach(form => {
+        form.addEventListener('submit', function() {
+            const submitBtn = form.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span> Processing...';
+                submitBtn.disabled = true;
+            }
+        });
+    });
+});
+</script>
+
+<style>
+/* Custom styling */
+.card {
+    border-radius: 0.5rem;
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.card-header {
+    padding: 1rem 1.5rem;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.btn-primary {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.btn-primary:hover {
+    background-color: #0b5ed7;
+    border-color: #0a58ca;
+}
+
+/* Animation for form elements */
+.form-group {
+    transition: all 0.2s ease;
+}
+
+.form-group:focus-within {
+    transform: translateY(-1px);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .card {
+        margin: 0 1rem;
+    }
+    
+    .d-flex {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .btn {
+        width: 100%;
+    }
+}
+</style>
+{% endblock %}

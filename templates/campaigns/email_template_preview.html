@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %} Email Template Gallery - {{site_name}} {% endblock %}
+{% block content %}
+<div class="container py-4">
+    <h2>{{ template.name }}</h2>
+    <h5>Subject: {{ template.subject }}</h5>
+    <hr>
+    <div class="email-preview">
+        {{ form }}
+    </div>
+    <a href="{% url 'campaign:emailtemplate_gallery' %}" class="btn btn-secondary mt-3">Back to Gallery</a>
+</div>
+{% endblock %}

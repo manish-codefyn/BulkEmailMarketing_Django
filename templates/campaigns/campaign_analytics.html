@@ -1,0 +1,210 @@
+<!-- campaigns/campaign_analytics.html -->
+{% extends "base.html" %}
+
+{% block title %}{{ campaign.name }} Analytics - {{site_name}} {% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h4>{{ campaign.name }} Analytics</h4>
+        <div>
+            <a href="{% url 'campaign_detail' campaign.pk %}" class="btn btn-sm btn-secondary">
+                Back to Campaign
+            </a>
+        </div>
+    </div>
+    
+    <div class="card-body">
+        <!-- Summary Stats -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ total_sent }}</h5>
+                        <p class="card-text">Emails Sent</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ opened_count }} ({{ open_rate }}%)</h5>
+                        <p class="card-text">Opened</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ clicked_count }} ({{ click_rate }}%)</h5>
+                        <p class="card-text">Clicked</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ ctr|default:"0" }}%</h5>
+                        <p class="card-text">CTR</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Engagement Timeline Chart -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>Engagement Timeline</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="timelineChart" height="100"></canvas>
+            </div>
+        </div>
+
+        <!-- Top Links -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>Top Clicked Links</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>URL</th>
+                                <th>Clicks</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for link in top_links %}
+                            <tr>
+                                <td>{{ link.clicked_url|truncatechars:50 }}</td>
+                                <td>{{ link.clicks }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="2">No clicks recorded</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Additional Metrics -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Device Breakdown</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="deviceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Bounce & Unsubscribe Stats</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="bounceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Timeline Chart
+    const timelineCtx = document.getElementById('timelineChart').getContext('2d');
+    new Chart(timelineCtx, {
+        type: 'line',
+        data: {
+            labels: [{% for day in timeline_data %}"{{ day.date|date:'M j' }}"{% if not forloop.last %},{% endif %}{% endfor %}],
+            datasets: [
+                {
+                    label: 'Sent',
+                    data: [{% for day in timeline_data %}{{ day.sent }}{% if not forloop.last %},{% endif %}{% endfor %}],
+                    borderColor: '#3e95cd',
+                    backgroundColor: '#3e95cd',
+                    tension: 0.1
+                },
+                {
+                    label: 'Opened',
+                    data: [{% for day in timeline_data %}{{ day.opened }}{% if not forloop.last %},{% endif %}{% endfor %}],
+                    borderColor: '#8e5ea2',
+                    backgroundColor: '#8e5ea2',
+                    tension: 0.1
+                },
+                {
+                    label: 'Clicked',
+                    data: [{% for day in timeline_data %}{{ day.clicked }}{% if not forloop.last %},{% endif %}{% endfor %}],
+                    borderColor: '#3cba9f',
+                    backgroundColor: '#3cba9f',
+                    tension: 0.1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                }
+            }
+        }
+    });
+
+    // Device Breakdown Chart
+    const deviceCtx = document.getElementById('deviceChart').getContext('2d');
+    new Chart(deviceCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Desktop', 'Mobile', 'Tablet', 'Other'],
+            datasets: [{
+                data: [65, 25, 8, 2],  // Replace with actual data
+                backgroundColor: [
+                    '#3e95cd',
+                    '#8e5ea2',
+                    '#3cba9f',
+                    '#e8c3b9'
+                ]
+            }]
+        }
+    });
+
+    // Bounce Chart
+    const bounceCtx = document.getElementById('bounceChart').getContext('2d');
+    new Chart(bounceCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Bounces', 'Unsubscribes'],
+            datasets: [{
+                label: 'Count',
+                data: [{{ bounce_count }}, {{ unsubscribe_count }}],
+                backgroundColor: [
+                    '#ff6384',
+                    '#36a2eb'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

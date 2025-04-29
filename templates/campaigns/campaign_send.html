@@ -1,0 +1,26 @@
+<!-- campaigns/templates/campaigns/campaign_send.html -->
+
+{% extends 'base.html' %}
+{% load static %}
+{% block title %} Campaigns Send - {{site_name}} {% endblock %}
+{% block content %}
+<div class="container mt-5">
+  <h2>Send Campaign: {{ campaign.name }}</h2>
+  <p>Select how you want to send the campaign:</p>
+
+  <form method="post">
+    {% csrf_token %}
+    <div class="form-group">
+      <label for="send_mode">Choose sending mode:</label>
+      <select name="send_mode" id="send_mode" class="form-control" required>
+        <option value="">-- Select Send Mode --</option>
+        <option value="bg">Background (Recommended)</option>
+        <option value="live">Live (Immediate)</option>
+      </select>
+    </div>
+
+    <button type="submit" class="btn btn-primary mt-3">Send Campaign</button>
+    <a href="{% url 'campaigns:campaign_detail' campaign.pk %}" class="btn btn-secondary mt-3">Cancel</a>
+  </form>
+</div>
+{% endblock %}

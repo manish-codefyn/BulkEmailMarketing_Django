@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}Import Subscribers - {{site_name}} {% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0 p-4">
+                <div class="card-header bg-light border-0 mb-3">
+                    <h2 class="h5 mb-0 text-center">Import Subscribers</h2>
+                </div>
+                <div class="card-body">
+                    <form action="{% url 'subscriber:import_subscriber_lists' %}" method="post" enctype="multipart/form-data" class="d-flex flex-column gap-3">
+                        {% csrf_token %}
+                        <div>
+                            <label for="file" class="form-label">Upload .xlsx file</label>
+                            <input type="file" name="file" id="file" accept=".xlsx" required class="form-control">
+                        </div>
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-primary rounded-pill">
+                                <i class="bi bi-upload me-2"></i>Upload and Import
+                            </button>
+                        </div>
+                    </form>
+                    <div class="text-center mt-3">
+                        <a href="{% url 'subscriber:subscriber_list' %}" class="btn btn-outline-secondary rounded-pill">
+                            <i class="bi bi-arrow-left me-2"></i>Back to Subscribers
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,77 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Codefyn Software Solutions">
+    <title>
+        {% block title %}{{ page_title|default:"Email Marketing App" }} - {{ site_name }} {% endblock %}
+    </title>
+    
+    <meta name="description" content="Codefyn Software Solutions - The best email marketing company in Siliguri, West Bengal. We provide premium Indian email marketing services with high deliverability, stunning templates, and data-driven campaigns to grow your business.">
+    <meta name="keywords" content="best email marketing in Siliguri, top email marketing company India, West Bengal email services, email campaign solutions, bulk email marketing Siliguri, professional email marketing, cost-effective email campaigns, Indian email marketing experts, Codefyn Software Solutions, digital marketing Siliguri, email automation services, targeted email marketing, ROI-driven email strategies">
+    {% load static %}
+    {% if favicon_url %}
+    <link rel="icon" href="{{ favicon_url }}">
+    {% else %}
+    <link rel="icon" href="{% static 'image/favicon.ico' %}">
+    {% endif %}
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    {# Add AOS CSS for animations #}
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <!-- jQuery (required for DataTables) -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+
+
+</head>
+<body>
+  
+{% include 'includes/navbar.html' %}
+    <main class="container my-5 mt-5 pt-5 py-5">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+        
+        {% block content %}{% endblock %}
+    </main>
+
+    {% include 'includes/footer.html' %}
+
+
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- DataTables JS -->
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    
+    <!-- Custom JS -->
+    <script src="{% static 'js/main.js' %}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script>
+    AOS.init({
+        duration: 800, // Animation duration
+        once: true, // Whether animation should happen only once - while scrolling down
+        offset: 100, // Offset (in px) from the original trigger point
+    });
+    </script>
+
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block title %}Subscribers - {{site_name}}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4 p-3">
+        <div class="col-12">
+            <div class="card shadow-sm border-0 p-3">
+                <div class="card-header bg-light border-0 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <h2 class="h5 mb-0">Subscriber Management</h2>
+                    <div class="d-flex flex-wrap gap-2">
+                        <a href="{% url 'subscriber:export_subscriber_lists' %}" class="btn btn-outline-success rounded-pill">
+                            <i class="bi bi-download me-2"></i>Export Subscribers
+                        </a>
+                        <a href="{% url 'subscriber:import_subscribers_lists' %}" class="btn btn-outline-primary rounded-pill">
+                            <i class="bi bi-upload me-2"></i>Import Subscribers
+                        </a>
+                        <a href="{% url 'subscriber:subscriber_create' %}" class="btn btn-primary rounded-pill">
+                            <i class="bi bi-plus-circle me-2"></i>Add Subscriber
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body p-3">
+                    <div class="table-responsive">
+                        <table id="subscribersTable" class="table table-hover align-middle mb-0" style="width:100%">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="ps-4">Email</th>
+                                    <th>Name</th>
+                                    <th>Status</th>
+                                    <th>Subscribed Date</th>
+                                    <th>Lists</th>
+                                    <th class="text-end pe-4">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for subscriber in subscribers %}
+                                <tr>
+                                    <td class="ps-4 fw-medium">{{ subscriber.email|default:"No Email" }}</td>
+                                    <td>
+                                        {% if subscriber.first_name or subscriber.last_name %}
+                                            {{ subscriber.first_name|default:"" }} {{ subscriber.last_name|default:"" }}
+                                        {% else %}
+                                            <span class="text-muted">Not Provided</span>
+                                        {% endif %}
+                                    </td>
+                                    <td data-order="{{ subscriber.is_active|yesno:'1,0' }}">
+                                        {% if subscriber.is_active %}
+                                            <span class="badge rounded-pill bg-success bg-opacity-10 text-success">
+                                                <i class="bi bi-check-circle me-1"></i> Active
+                                            </span>
+                                        {% else %}
+                                            <span class="badge rounded-pill bg-danger bg-opacity-10 text-danger">
+                                                <i class="bi bi-x-circle me-1"></i> Unsubscribed
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td data-order="{% if subscriber.subscribed_at %}{{ subscriber.subscribed_at|date:'U' }}{% else %}0{% endif %}">
+                                        {% if subscriber.subscribed_at %}
+                                            {{ subscriber.subscribed_at|date:"M d, Y" }}
+                                        {% else %}
+                                            <span class="text-muted">N/A</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if subscriber.lists.exists %}
+                                            {% for list in subscriber.lists.all %}
+                                                <span class="badge rounded-pill bg-info bg-opacity-10 text-info">
+                                                    {{ list.name }}
+                                                </span>
+                                            {% endfor %}
+                                        {% else %}
+                                            <span class="text-muted">No Lists</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end pe-4">
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a href="{% url 'subscriber:subscriber_update' subscriber.pk %}" class="btn btn-outline-warning rounded-start-pill">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <a href="{% url 'subscriber:subscriber_delete' subscriber.pk %}" class="btn btn-outline-danger rounded-end-pill">
+                                                <i class="bi bi-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-5">
+                                        <div class="py-5">
+                                            <i class="bi bi-people display-5 text-muted"></i>
+                                            <p class="mt-3 text-muted">No subscribers found. Add your first subscriber to get started.</p>
+                                            <a href="{% url 'subscriber:subscriber_create' %}" class="btn btn-primary rounded-pill mt-2">
+                                                <i class="bi bi-plus-circle me-2"></i>Add Subscriber
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    if ($('#campaignsTable tbody tr').length > 1 || 
+        ($('#campaignsTable tbody tr').length == 1 && $('#campaignsTable tbody tr td[colspan]').length == 0)) {
+        
+        $('#campaignsTable').DataTable({
+            responsive: true,
+            deferRender: true,
+            language: {
+                search: "_INPUT_",
+                searchPlaceholder: "Search campaigns...",
+                lengthMenu: "Show _MENU_ campaigns",
+                info: "Showing _START_ to _END_ of _TOTAL_ campaigns",
+                infoEmpty: "Showing 0 to 0 of 0 campaigns",
+                infoFiltered: "(filtered from _MAX_ total campaigns)",
+                paginate: {
+                    first: "First",
+                    last: "Last",
+                    next: "Next",
+                    previous: "Previous"
+                }
+            },
+            columnDefs: [
+                { 
+                    orderable: false, 
+                    targets: [4] // Disable sorting for Actions column
+                },
+                {
+                    type: 'date',
+                    targets: [3] // Proper date sorting for Created column
+                }
+            ],
+            order: [[3, 'desc']], // Default sort by Created date (newest first)
+            dom: '<"top"<"d-flex justify-content-between align-items-center"lf>>rt<"bottom"ip><"clear">',
+            initComplete: function() {
+                // Add custom class to search input
+                $('.dataTables_filter input').addClass('form-control');
+                // Add custom class to length select
+                $('.dataTables_length select').addClass('form-select');
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

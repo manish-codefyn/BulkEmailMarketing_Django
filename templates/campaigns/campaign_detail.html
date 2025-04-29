@@ -1,0 +1,455 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags static %}
+{% block title %}{{ campaign.name }} - {{site_name}} {% endblock %}
+
+{% block extra_css %}
+
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
+            <div>
+                <h2 class="h4 mb-1">{{ campaign.name }}</h2>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge {% if campaign.sent_at %}bg-success{% elif campaign.is_active %}bg-primary{% else %}bg-secondary{% endif %} bg-opacity-10 text-{% if campaign.sent_at %}success{% elif campaign.is_active %}primary{% else %}secondary{% endif %} rounded-pill badge-lg">
+                        {% if campaign.sent_at %}
+                            <i class="bi bi-check-circle-fill me-1"></i> Sent
+                        {% elif campaign.status == 'sending' %}
+                            <i class="bi bi-arrow-repeat me-1"></i> Sending
+                        {% elif campaign.is_active %}
+                            <i class="bi bi-pencil-fill me-1"></i> Draft
+                        {% else %}
+                            <i class="bi bi-pause-fill me-1"></i> Inactive
+                        {% endif %}
+                    </span>
+                    {% if campaign.sent_at %}
+                    <span class="text-muted small">
+                        <i class="bi bi-calendar me-1"></i> Sent {{ campaign.sent_at|date }}
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            {% if not campaign.sent_at and campaign.status != 'sending' %}
+            <div class="d-flex gap-2">
+                <button class="btn btn-warning rounded-pill" data-bs-toggle="modal" data-bs-target="#testEmailModal">
+                    <i class="bi bi-send me-1"></i> Send Test
+                </button>
+                
+                <div class="dropdown">
+                    <button class="btn btn-primary rounded-pill dropdown-toggle" type="button" id="sendDropdown" data-bs-toggle="dropdown">
+                        <i class="bi bi-rocket me-1"></i> Send Campaign
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li>
+                            <form method="post" action="{% url 'campaign:send_campaign' campaign.pk %}">
+                                {% csrf_token %}
+                                <button type="submit" class="dropdown-item">
+                                    <i class="bi bi-clock-history me-2"></i> Send in Background
+                                </button>
+                            </form>
+                        </li>
+                        <li>
+                            <form method="post" action="{% url 'campaign:send_campaign_live' campaign.pk %}">
+                                {% csrf_token %}
+                                <button type="submit" class="dropdown-item">
+                                    <i class="bi bi-lightning me-2"></i> Send Now (Live)
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="card-body">
+        
+            <h5 class="mb-3">Email Content Preview</h5>
+            <div class="email-preview">
+                {% csrf_token %}
+                {{ form.media }}
+                {{ form|crispy }}
+            </div>
+
+            <div class="campaign-meta">
+                <div class="d-flex flex-wrap gap-3">
+                    <span><i class="bi bi-calendar-plus me-1"></i> Created: {{ campaign.created_at|date }}</span>
+                    <span><i class="bi bi-pencil-square me-1"></i> Last Updated: {{ campaign.updated_at|date }}</span>
+                    {% if campaign.sent_by %}
+                    <span><i class="bi bi-person me-1"></i> Sent by: {{ campaign.sent_by.get_full_name|default:campaign.sent_by.username }}</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="action-buttons mt-4">
+        <button class="btn btn-info rounded-pill" id="monitorCampaignBtn">
+            <i class="bi bi-speedometer2 me-1"></i> Monitor Campaign
+        </button>
+        <button class="btn btn-primary rounded-pill" id="viewProgressBtn">
+            <i class="bi bi-graph-up me-1"></i> View Progress
+        </button>
+        <a href="{% url 'campaign:campaign_update' campaign.pk %}" class="btn btn-warning rounded-pill">
+            <i class="bi bi-pencil me-1"></i> Edit Campaign
+        </a>
+        <a href="{% url 'campaign:campaign_list' %}" class="btn btn-outline-secondary rounded-pill">
+            <i class="bi bi-arrow-left me-1"></i> Back to Campaigns
+        </a>
+    </div>
+</div>
+
+<!-- Test Email Modal -->
+<div class="modal fade" id="testEmailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Send Test Email</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'campaign:send_test_email' campaign.pk %}">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="testEmail" class="form-label">Email Address</label>
+                        <input type="email" class="form-control" id="testEmail" name="email" required placeholder="recipient@example.com">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary rounded-pill">
+                        <i class="bi bi-send me-1"></i> Send Test
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Campaign Progress Modal -->
+<div class="modal fade" id="progressModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Campaign Progress</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card border-0 shadow-sm mb-3">
+                            <div class="card-body text-center">
+                                <h3 class="display-5 text-primary" id="progressPercentage">0%</h3>
+                                <p class="text-muted">Completion</p>
+                                <div class="progress" style="height: 8px;">
+                                    <div class="progress-bar bg-primary" id="progressBar" role="progressbar" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Status:</span>
+                                    <strong id="statusText">Loading...</strong>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Emails Sent:</span>
+                                    <strong id="sentCount">0</strong>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Total Emails:</span>
+                                    <strong id="totalCount">0</strong>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span>Estimated Time Remaining:</span>
+                                    <strong id="timeRemaining">Calculating...</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <h6 class="mb-3">Recent Activity</h6>
+                    <div class="list-group" id="activityLog">
+                        <div class="list-group-item border-0">
+                            <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            Loading activity...
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary rounded-pill" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary rounded-pill" id="refreshProgress">
+                    <i class="bi bi-arrow-repeat me-1"></i> Refresh
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Monitor Campaign Modal -->
+<div class="modal fade" id="monitorCampaignModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Campaign Monitoring</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <div class="card border-success border-opacity-25 shadow-sm h-100">
+                            <div class="card-body text-center">
+                                <h3 class="display-5 text-success" id="sentEmailsCount">0</h3>
+                                <p class="text-muted">Sent Emails</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="card border-warning border-opacity-25 shadow-sm h-100">
+                            <div class="card-body text-center">
+                                <h3 class="display-5 text-warning" id="queuedEmailsCount">0</h3>
+                                <p class="text-muted">Queued Emails</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="card border-danger border-opacity-25 shadow-sm h-100">
+                            <div class="card-body text-center">
+                                <h3 class="display-5 text-danger" id="failedEmailsCount">0</h3>
+                                <p class="text-muted">Failed Emails</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card border-0 shadow-sm mt-3">
+                    <div class="card-body">
+                        <h6 class="mb-3">Delivery Stats</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <canvas id="deliveryChart" height="200"></canvas>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <tbody>
+                                            <tr>
+                                                <td>Open Rate:</td>
+                                                <td class="text-end fw-bold" id="openRate">0%</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Click Rate:</td>
+                                                <td class="text-end fw-bold" id="clickRate">0%</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Bounce Rate:</td>
+                                                <td class="text-end fw-bold" id="bounceRate">0%</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Unsubscribe Rate:</td>
+                                                <td class="text-end fw-bold" id="unsubscribeRate">0%</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary rounded-pill" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary rounded-pill" id="refreshMonitor">
+                    <i class="bi bi-arrow-repeat me-1"></i> Refresh
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+
+<script>
+$(document).ready(function() {
+    // Initialize modals
+    const progressModal = new bootstrap.Modal(document.getElementById('progressModal'));
+    const monitorModal = new bootstrap.Modal(document.getElementById('monitorCampaignModal'));
+    
+    // View Progress Button
+    $('#viewProgressBtn').click(function() {
+        fetchCampaignProgress();
+        progressModal.show();
+    });
+    
+    // Monitor Campaign Button
+    $('#monitorCampaignBtn').click(function() {
+        fetchCampaignMonitoring();
+        monitorModal.show();
+    });
+    
+    // Refresh buttons
+    $('#refreshProgress').click(fetchCampaignProgress);
+    $('#refreshMonitor').click(fetchCampaignMonitoring);
+    
+    // Fetch campaign progress data
+    function fetchCampaignProgress() {
+        const campaignId = "{{ campaign.pk }}";
+        
+        $('#progressData').html(`
+            <div class="text-center py-3">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Loading progress data...</p>
+            </div>
+        `);
+        
+        fetch(`/campaigns/${campaignId}/progress/`)
+            .then(response => response.json())
+            .then(data => {
+                // Update progress
+                const progress = data.progress_percentage || 0;
+                $('#progressPercentage').text(progress + '%');
+                $('#progressBar').css('width', progress + '%');
+                
+                // Update stats
+                $('#statusText').text(data.status || 'Unknown');
+                $('#sentCount').text(data.sent_emails || 0);
+                $('#totalCount').text(data.total_emails || 0);
+                $('#timeRemaining').text(data.time_remaining || 'N/A');
+                
+                // Update activity log
+                if (data.recent_activity && data.recent_activity.length > 0) {
+                    let activityHtml = '';
+                    data.recent_activity.forEach(activity => {
+                        activityHtml += `
+                            <div class="list-group-item border-0">
+                                <div class="d-flex justify-content-between">
+                                    <span>${activity.message}</span>
+                                    <small class="text-muted">${activity.timestamp}</small>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    $('#activityLog').html(activityHtml);
+                } else {
+                    $('#activityLog').html(`
+                        <div class="list-group-item border-0 text-muted">
+                            No recent activity found
+                        </div>
+                    `);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                $('#progressData').html(`
+                    <div class="alert alert-danger">
+                        Failed to load progress data. Please try again.
+                    </div>
+                `);
+            });
+    }
+    
+    // Fetch campaign monitoring data
+    function fetchCampaignMonitoring() {
+        const campaignId = "{{ campaign.pk }}";
+        
+        $('#monitorData').html(`
+            <div class="text-center py-3">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Loading monitoring data...</p>
+            </div>
+        `);
+        
+        fetch(`/campaigns/${campaignId}/monitor/`)
+            .then(response => response.json())
+            .then(data => {
+                // Update counts
+                $('#sentEmailsCount').text(data.sent_emails || 0);
+                $('#queuedEmailsCount').text(data.queued_emails || 0);
+                $('#failedEmailsCount').text(data.failed_emails || 0);
+                
+                // Update rates
+                $('#openRate').text((data.open_rate || 0) + '%');
+                $('#clickRate').text((data.click_rate || 0) + '%');
+                $('#bounceRate').text((data.bounce_rate || 0) + '%');
+                $('#unsubscribeRate').text((data.unsubscribe_rate || 0) + '%');
+                
+                // Update chart
+                updateDeliveryChart(data);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                $('#monitorData').html(`
+                    <div class="alert alert-danger">
+                        Failed to load monitoring data. Please try again.
+                    </div>
+                `);
+            });
+    }
+    
+    // Delivery chart
+    let deliveryChart = null;
+    
+    function updateDeliveryChart(data) {
+        const ctx = document.getElementById('deliveryChart').getContext('2d');
+        
+        if (deliveryChart) {
+            deliveryChart.destroy();
+        }
+        
+        deliveryChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Sent', 'Queued', 'Failed'],
+                datasets: [{
+                    data: [
+                        data.sent_emails || 0,
+                        data.queued_emails || 0,
+                        data.failed_emails || 0
+                    ],
+                    backgroundColor: [
+                        'rgba(40, 167, 69, 0.8)',
+                        'rgba(255, 193, 7, 0.8)',
+                        'rgba(220, 53, 69, 0.8)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                    }
+                }
+            }
+        });
+    }
+});
+
+// Auto-refresh progress every 5 seconds when modal is open
+$('#progressModal').on('shown.bs.modal', function() {
+    fetchCampaignProgress();
+    progressRefreshInterval = setInterval(fetchCampaignProgress, 5000);
+});
+
+$('#progressModal').on('hidden.bs.modal', function() {
+    clearInterval(progressRefreshInterval);
+});
+</script>
+{% endblock %}

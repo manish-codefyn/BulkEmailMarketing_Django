@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="card">
+        <div class="card-body text-center">
+            <h2 class="card-title">Unsubscribe</h2>
+            {% if messages %}
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
+                </div>
+                {% endfor %}
+            {% endif %}
+            <p class="card-text">You've been successfully unsubscribed from our mailing list.</p>
+            <a href="{% url 'code:home' %}" class="btn btn-primary">Return to Homepage</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

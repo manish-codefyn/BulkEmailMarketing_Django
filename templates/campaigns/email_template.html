@@ -1,0 +1,48 @@
+{% load custom_filters %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ subject }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .footer { margin-top: 30px; font-size: 12px; color: #666; text-align: center; }
+        a.tracked-link { color: #0066cc; text-decoration: underline; }
+        @media screen and (max-width: 600px) {
+            .container { width: 100% !important; padding: 10px !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Tracking pixel -->
+        <img src="https://codefyn.com/track/open/{{ campaign.id }}/{{ subscriber.id }}" 
+             width="1" height="1" border="0" alt="" style="display:none; width:1px; height:1px">
+
+        <!-- Tracked links -->
+        {% for link in campaign.content|extract_links %}
+            <a href="https://codefyn.com/track/click/{{ campaign.id }}/{{ subscriber.id }}/{{ link.url|urlencode }}" 
+               target="_blank" rel="noopener noreferrer" class="tracked-link">{{ link.text }}</a>
+        {% endfor %}
+
+        <!-- Main content -->
+        <div class="email-content">
+            {{ campaign_content_html|safe }}
+
+            
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <p>
+                You're receiving this email because you subscribed to our mailing list.<br>
+                <a href="{{ unsubscribe_url }}" style="color: #0066cc; text-decoration: underline;">Unsubscribe</a>
+                or <a href="mailto:sales@codefyn.com?subject=Unsubscribe" style="color: #0066cc;">email us</a>.
+            </p>
+            <p>&copy; {% now "Y" %} Codefyn Software Solutions. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

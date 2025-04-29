@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ form.instance.pk|yesno:"Edit Subscriber List,Create Subscriber List" }} -{{site_name}}{% endblock %}
+
+{% block content %}
+<div class="container mt-4 bg-white col-lg-6 shadow-sm p-3 rounded-4">
+    <h2>{{ form.instance.pk|yesno:"Edit Subscriber List,Create Subscriber List" }}</h2>
+    <form method="post">
+        {% csrf_token %}
+        {{ form|crispy }}
+        <button type="submit" class="btn btn-success">Save</button>
+        <a href="{% url 'subscriber:subscriberlist_list' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Email Marketing App - {{site_name}}{% endblock %}
+
+{% block content %}
+<div class="hero-section bg-primary text-white py-5">
+    <div class="container text-center">
+        <h1 class="display-4">Powerful Email Marketing</h1>
+        <p class="lead">Create, send, and analyze email campaigns with ease</p>
+        
+        {% if not user.is_authenticated %}
+        <div class="mt-4">
+            <a href="{% url 'account_signup' %}" class="btn btn-light btn-lg mx-2">Sign Up Free</a>
+            <a href="{% url 'account_login' %}" class="btn btn-outline-light btn-lg mx-2">Login</a>
+        </div>
+        {% else %}
+        <div class="mt-4">
+            <a href="{% url 'core:dashboard' %}" class="btn btn-light btn-lg">Go to Dashboard</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="container my-5">
+    <div class="row text-center">
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <i class="bi bi-envelope-fill display-4 text-primary mb-3"></i>
+                    <h3>Campaign Management</h3>
+                    <p>Create beautiful email campaigns with our drag-and-drop editor.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <i class="bi bi-people-fill display-4 text-success mb-3"></i>
+                    <h3>Subscriber Lists</h3>
+                    <p>Organize your subscribers into lists and segments for targeted campaigns.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <i class="bi bi-graph-up display-4 text-info mb-3"></i>
+                    <h3>Analytics</h3>
+                    <p>Track opens, clicks, and conversions to measure campaign success.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="bg-light py-5">
+    <div class="container">
+        <h2 class="text-center mb-4">Why Choose Our Platform?</h2>
+        <div class="row">
+            <div class="col-md-6">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item bg-light"><i class="bi bi-check-circle-fill text-success me-2"></i> Easy-to-use interface</li>
+                    <li class="list-group-item bg-light"><i class="bi bi-check-circle-fill text-success me-2"></i> Responsive email templates</li>
+                    <li class="list-group-item bg-light"><i class="bi bi-check-circle-fill text-success me-2"></i> Advanced analytics</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item bg-light"><i class="bi bi-check-circle-fill text-success me-2"></i> Secure and reliable</li>
+                    <li class="list-group-item bg-light"><i class="bi bi-check-circle-fill text-success me-2"></i> Affordable pricing</li>
+                    <li class="list-group-item bg-light"><i class="bi bi-check-circle-fill text-success me-2"></i> Excellent support</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

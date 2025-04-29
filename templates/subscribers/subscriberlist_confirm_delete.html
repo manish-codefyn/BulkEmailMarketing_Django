@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Delete Subscriber List -{{site_name}}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header bg-danger text-white">
+        <h4>Delete Subscriber List</h4>
+    </div>
+    <div class="card-body">
+        <p>Are you sure you want to delete the subscriber list <strong>"{{ object.name }}"</strong>?</p>
+        <p class="text-muted">This action cannot be undone.</p>
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="d-flex justify-content-end">
+                <a href="{% url 'subscriber:subscriberlist_list' %}" class="btn btn-outline-secondary me-2">
+                    <i class="bi bi-x-circle me-2"></i>Cancel
+                </a>
+                <button type="submit" class="btn btn-danger">
+                    <i class="bi bi-trash me-2"></i>Delete List
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

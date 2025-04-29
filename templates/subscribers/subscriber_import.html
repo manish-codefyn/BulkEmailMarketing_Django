@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}Import Subscribers -{{site_name}}{% endblock %}
+
+{% block content %}
+<div class="container mt-4 bg-white col-lg-6 shadow-sm p-4 rounded-4">
+    <h2>Import Subscribers to "{{ subscriber_list.name }}"</h2>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form|crispy }}
+        <button type="submit" class="btn btn-primary mt-2">Import</button>
+        <a href="{% url 'subscriber:subscriberlist_list' %}" class="btn btn-secondary mt-2">Cancel</a>
+    </form>
+</div>
+{% endblock %}

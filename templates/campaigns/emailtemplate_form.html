@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags static %}
+
+{% block title %}{% if form.instance.pk %}Edit{% else %}Create{% endif %} Email Template  - {{site_name}} {% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'css/email_template_form.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">
+                    <i class="bi bi-file-earmark-text me-2"></i>
+                    {% if form.instance.pk %}Edit{% else %}Create New{% endif %} Email Template
+                </h4>
+                <button type="button" class="btn btn-sm btn-light" id="variables-help">
+                    <i class="bi bi-question-circle me-1"></i> Template Variables
+                </button>
+            </div>
+        </div>
+        
+        <div class="card-body">
+            <!-- Template Variables Help (Initially Hidden) -->
+            <div id="template-variables" class="alert alert-info d-none mb-4">
+                <h5 class="alert-heading">Available Template Variables:</h5>
+                <ul class="mb-0">
+                    <li><code>{first_name}</code> - Subscriber's first name</li>
+                    <li><code>{last_name}</code> - Subscriber's last name</li>
+                    <li><code>{email}</code> - Subscriber's email address</li>
+                    <li><code>{unsubscribe_url}</code> - Unsubscribe link</li>
+                    <li><code>{campaign_name}</code> - Campaign name</li>
+                </ul>
+            </div>
+            
+            <form method="post" id="template-form">
+                {% csrf_token %}
+                {{ form.media }}
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        {{ form.name|as_crispy_field }}
+                    </div>
+                    <div class="col-md-6">
+                        {{ form.subject|as_crispy_field }}
+                    </div>
+                </div>
+                <div class="mb-3">
+                    {{ form.content|as_crispy_field }}
+                </div>
+                
+                <div class="form-check form-switch mb-4">
+                    {{ form.is_active|as_crispy_field }}
+                </div>
+                
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <button type="button" id="preview-btn" class="btn btn-outline-secondary me-2">
+                            <i class="bi bi-eye me-2"></i>Preview
+                        </button>
+                    </div>
+                    
+                    <div>
+                        {% if form.instance.pk %}
+                        <a href="{% url 'campaign:emailtemplate_list' %}" class="btn btn-outline-secondary me-2">
+                            <i class="bi bi-x-circle me-2"></i>Cancel
+                        </a>
+                        <a href="{% url 'campaign:emailtemplate_delete' form.instance.pk %}" class="btn btn-danger me-2">
+                            <i class="bi bi-trash me-2"></i>Delete
+                        </a>
+                        {% else %}
+                        <a href="{% url 'campaign:emailtemplate_list' %}" class="btn btn-outline-secondary me-2">
+                            <i class="bi bi-x-circle me-2"></i>Cancel
+                        </a>
+                        {% endif %}
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save me-2"></i>Save Template
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Preview Modal -->
+<div class="modal fade" id="previewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title">Template Preview</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h6 id="preview-subject" class="fw-bold mb-0"></h6>
+                    </div>
+                    <div class="card-body">
+                        <div id="preview-content" class="email-preview"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-2"></i>Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- CKEditor 5 -->
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('template-form');
+    const previewButton = document.getElementById('preview-btn');
+    const previewModal = new bootstrap.Modal(document.getElementById('previewModal'));
+
+    // ✅ find the correct Quill instance
+    let quillEditorInstance = null;
+    const quillElements = document.querySelectorAll('.quill-editor');
+
+    if (quillElements.length > 0) {
+        // django-quill sets a global quillEditors array
+        if (window.quillEditors) {
+            quillEditorInstance = window.quillEditors[0];  // get first editor
+        }
+    }
+
+    if (previewButton) {
+        previewButton.addEventListener('click', function() {
+            updatePreview();
+            previewModal.show();
+        });
+    }
+
+    function updatePreview() {
+        const subject = document.getElementById('id_subject').value || '(No Subject)';
+        document.getElementById('preview-subject').textContent = subject;
+
+        if (quillEditorInstance) {
+            // ✅ correctly get HTML from Quill editor
+            document.getElementById('preview-content').innerHTML = quillEditorInstance.root.innerHTML;
+        } else {
+            // fallback
+            const quillDiv = document.querySelector('.ql-editor');
+            if (quillDiv) {
+                document.getElementById('preview-content').innerHTML = quillDiv.innerHTML;
+            } else {
+                document.getElementById('preview-content').innerHTML = document.getElementById('id_content').value;
+            }
+        }
+    }
+
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            if (quillEditorInstance) {
+                document.getElementById('id_content').value = quillEditorInstance.root.innerHTML;
+            }
+            const submitButton = form.querySelector('button[type="submit"]');
+            if (submitButton) {
+                submitButton.innerHTML = '<i class="bi bi-arrow-repeat spinner"></i> Saving...';
+                submitButton.disabled = true;
+            }
+        });
+    }
+});
+
+// /
+document.addEventListener('DOMContentLoaded', function() {
+    // Template Variables Toggle
+    const variablesButton = document.getElementById('variables-help');
+    const variablesList = document.getElementById('template-variables');
+    
+    if (variablesButton && variablesList) {
+        variablesButton.addEventListener('click', function() {
+            if (variablesList.classList.contains('d-none')) {
+                variablesList.classList.remove('d-none');
+                variablesButton.innerHTML = '<i class="bi bi-x-circle me-1"></i> Hide Variables';
+            } else {
+                variablesList.classList.add('d-none');
+                variablesButton.innerHTML = '<i class="bi bi-question-circle me-1"></i> Template Variables';
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
+
